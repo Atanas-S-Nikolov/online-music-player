@@ -1,0 +1,15 @@
+{
+  "name": "Online Music Player",
+  "description": "Listen music online while surf in the web.",
+  "version": "1.0",
+  "manifest_version": 3,
+  "action": {
+      "default_popup": "index.html",
+      "default_title": "Open the popup"
+  },
+  "icons": {
+      "16": "logo16.png",
+      "48": "logo48.png",
+      "128": "logo128.png"
+  }
+}
