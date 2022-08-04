@@ -4,7 +4,7 @@ const CustomWidthTooltip = styled(({ className, ...props }) => (
     <Tooltip {...props} classes={{ popper: className }} />
   ))({
     [`& .${tooltipClasses.tooltip}`]: {
-    maxWidth: "fit-content",
+      maxWidth: "fit-content",
     },
 });
 

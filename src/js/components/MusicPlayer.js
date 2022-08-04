@@ -24,7 +24,7 @@ const SliderDiv = styled('div')({
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
     color: theme.palette.primary.main
-}))
+}));
 
 function renderVolumeIcon(volume) {
     if (volume <= 100 && volume >= 50) {
@@ -47,10 +47,11 @@ export default function MusicPlayer() {
     const [position, setPosition] = useState(0);
     const[volume, setVolume] = useState(100);
     const [isPaused, setIsPaused] = useState(false);
+
     let isVolumeMuted = volume === 0;
 
     return(
-        <>
+        <div id="music-player">
             <Typography variant="h6">Papa Roach - ...To Be Loved</Typography>
             <SliderDiv>
                 <Slider 
@@ -120,6 +121,6 @@ export default function MusicPlayer() {
                     />
                 </CustomWidthTooltip>
             </SliderDiv>
-        </>
+        </div>
     );
 }
