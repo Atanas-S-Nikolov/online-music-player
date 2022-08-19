@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { styled, Slider, IconButton, Typography } from "@mui/material";
+import { styled, Slider, Typography } from "@mui/material";
 import { 
     PauseRounded, 
     PlayArrowRounded, 
@@ -11,9 +11,10 @@ import {
     VolumeMuteRounded,
     VolumeDownRounded,
     VolumeUpRounded
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
 import CustomWidthTooltip from "./CustomWidthTooltip";
+import StyledIconButton from "./StyledIconButton";
 
 const SliderDiv = styled('div')({ 
     justifyContent: "left",
@@ -21,10 +22,6 @@ const SliderDiv = styled('div')({
     display: "flex",
     gap: "15px"
 });
-
-const StyledIconButton = styled(IconButton)(({ theme }) => ({
-    color: theme.palette.primary.main
-}));
 
 function renderVolumeIcon(volume) {
     if (volume <= 100 && volume >= 50) {
