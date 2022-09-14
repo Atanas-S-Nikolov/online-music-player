@@ -2,11 +2,12 @@ import { useState } from 'react';
 
 import { Box, BottomNavigation, BottomNavigationAction, styled } from '@mui/material';
 import { MusicNoteRounded, SettingsRounded, QueueMusicRounded } from '@mui/icons-material';
-import MusicPlayer from './MusicPlayer';
+
 import Playlist from './Playlist';
 
 export default function AppBottomNavigation(props) {
   const [value, setValue] = useState(0);
+  const { initialComponent, parentCallback } = props;
 
   const StyledBottomNavigation = styled(BottomNavigation)(({ theme }) => ({
     background: theme.palette.background.default,
@@ -19,7 +20,7 @@ export default function AppBottomNavigation(props) {
   }));
 
   const updateAppComponent = (component) => {
-    props.parentCallback(component);
+    parentCallback(component);
   }
 
   return (
@@ -39,12 +40,12 @@ export default function AppBottomNavigation(props) {
         <StyledBottomNavAction 
           label="Music Player"
           icon={<MusicNoteRounded />}
-          onClick={() => updateAppComponent(<MusicPlayer/>)}
+          onClick={() => updateAppComponent(initialComponent)}
         />
         <StyledBottomNavAction 
           label="Playlist"
           icon={<QueueMusicRounded />}
-          onClick={() => updateAppComponent(<Playlist parentTrack={props.trackCallback}/>)}
+          onClick={() => updateAppComponent(<Playlist/>)}
         />
         <StyledBottomNavAction 
           label="Options"

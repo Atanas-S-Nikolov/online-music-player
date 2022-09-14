@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
 
 import { styled, Slider, Typography } from "@mui/material";
 import { 
@@ -15,6 +15,9 @@ import {
 
 import CustomWidthTooltip from "./CustomWidthTooltip";
 import StyledIconButton from "./StyledIconButton";
+import TrackContext from "../utils/TrackContext";
+import { play, pause, seekBackward, seekForward, updateVolume } from "../utils/MusicControls";
+import { getTrackDetails } from "../utils/TrackUtils";
 
 const SliderDiv = styled('div')({ 
     justifyContent: "left",
@@ -34,22 +37,53 @@ function renderVolumeIcon(volume) {
 }
 
 function formatDuration(value) {
+    value = parseInt(value);
     const minute = Math.floor(value / 60);
     const secondLeft = value - minute * 60;
     return `${minute}:${secondLeft < 10 ? `0${secondLeft}` : secondLeft}`;
 }
 
 export default function MusicPlayer() {
-    const duration = 188; //seconds
+    const [duration, setDuration] = useState(0); //seconds
     const [position, setPosition] = useState(0);
-    const[volume, setVolume] = useState(100);
-    const [isPaused, setIsPaused] = useState(false);
+    const [volume, setVolume] = useState(100);
+    const [isPaused, setIsPaused] = useState(true);
+    const context = useContext(TrackContext);
+    const isVolumeMuted = volume === 0;
+    const { 
+        currentTrackRef, 
+        currentTrackIndex, 
+        currentTrackName, 
+        tracks, 
+        updateCurrentTrackIndex, 
+        updateCurrentTrackName, 
+        updateCurrentTrackUrl 
+    } = context;
 
-    let isVolumeMuted = volume === 0;
+    function updatePlayerDuration(duration) {
+        isNaN(duration)
+            ? setDuration(0)
+            : setDuration(duration)
+    }
+
+    function updatePlayerPosition(position) {
+        setPosition(position)
+    }
+
+    useEffect(() => {
+        const trackElement = currentTrackRef.current;
+        updatePlayerDuration(trackElement.duration);
+        updateCurrentTrackName(currentTrackName);
+    }, [currentTrackRef, currentTrackName, updateCurrentTrackName])
+
+    useEffect(() => {
+        const trackElement = currentTrackRef.current;
+        updatePlayerPosition(trackElement?.currentTime);
+    }, [currentTrackRef ,currentTrackRef.current?.currentTime])
 
     return(
         <div id="music-player">
-            <Typography variant="h6">Papa Roach - ...To Be Loved</Typography>
+            <Typography variant="h6">{currentTrackName}</Typography>
             <SliderDiv>
                 <Slider 
                     sx={{ width: "50%" }}
@@ -64,18 +98,38 @@ export default function MusicPlayer() {
             </SliderDiv>
             <div className="music-controls">
                 <CustomWidthTooltip title="Previous Track" placement="bottom-end">
-                    <StyledIconButton>
+                    <StyledIconButton
+                        onClick={() => {
+                            let previousIndex = currentTrackIndex - 1;
+
+                            if (previousIndex < 0) {
+                                previousIndex = tracks.length - 1;
+                            }
+                            updateCurrentTrackIndex(previousIndex);
+
+                            const trackDetails = getTrackDetails(tracks.at(previousIndex));
+                            updateCurrentTrackName(trackDetails.getTrackName());
+                            updateCurrentTrackUrl(trackDetails.getTrackUrl());
+                        }}
+                    >
                         <SkipPreviousRounded/>
                     </StyledIconButton>
                 </CustomWidthTooltip>
                 <CustomWidthTooltip title="Seek Backward" placement="bottom-end">
-                    <StyledIconButton>
+                    <StyledIconButton
+                        onClick={() => seekBackward(currentTrackRef)}
+                    >
                         <FastRewindRounded/>
                     </StyledIconButton>
                 </CustomWidthTooltip>
                 <CustomWidthTooltip title={isPaused ? "Play" : "Pause"} placement="bottom-end">
                     <StyledIconButton 
-                        onClick={() => setIsPaused(!isPaused)}
+                        onClick={() => {
+                            isPaused 
+                                ? play(currentTrackRef)
+                                : pause(currentTrackRef);
+                            setIsPaused(!isPaused);
+                        }}
                     >
                         {isPaused 
                             ? <PlayArrowRounded/> 
@@ -84,12 +138,27 @@ export default function MusicPlayer() {
                     </StyledIconButton>
                 </CustomWidthTooltip>
                 <CustomWidthTooltip title="Seek Forward" placement="bottom-end">
-                    <StyledIconButton>
+                    <StyledIconButton
+                        onClick={() => seekForward(currentTrackRef)}
+                    >
                         <FastForwardRounded/>
                     </StyledIconButton>
                 </CustomWidthTooltip>
                 <CustomWidthTooltip title="Next Track" placement="bottom-end">
-                    <StyledIconButton>
+                    <StyledIconButton
+                        onClick={() => {
+                            let nextIndex = currentTrackIndex + 1;
+
+                            if (nextIndex >= tracks.length) {
+                                nextIndex = 0;
+                            }
+                            updateCurrentTrackIndex(nextIndex);
+
+                            const trackDetails = getTrackDetails(tracks.at(nextIndex));
+                            updateCurrentTrackName(trackDetails.getTrackName());
+                            updateCurrentTrackUrl(trackDetails.getTrackUrl());
+                        }}
+                    >
                         <SkipNextRounded/>
                     </StyledIconButton>
                 </CustomWidthTooltip>
@@ -99,9 +168,13 @@ export default function MusicPlayer() {
                     <StyledIconButton
                         sx={{ padding: 0 }}
                         onClick={() => {
-                            isVolumeMuted
-                                ? setVolume(100)
-                                : setVolume(0)
+                            if (isVolumeMuted) {
+                                setVolume(100);
+                                updateVolume(currentTrackRef, 100);
+                            } else {
+                                setVolume(0);
+                                updateVolume(currentTrackRef, 0);
+                            }
                         }}
                     >
                         {renderVolumeIcon(volume)}
@@ -114,7 +187,10 @@ export default function MusicPlayer() {
                         min={0}
                         step={5}
                         max={100}
-                        onChange={(_, value) => setVolume(value)}
+                        onChange={(_, value) => {
+                            setVolume(value);
+                            updateVolume(currentTrackRef, volume);
+                        }}
                     />
                 </CustomWidthTooltip>
             </SliderDiv>

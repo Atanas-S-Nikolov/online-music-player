@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useContext } from "react";
 import Dropzone from "react-dropzone";
 
 import { 
@@ -18,12 +18,14 @@ import CustomWidthTooltip from "./CustomWidthTooltip";
 import StyledIconButton from "./StyledIconButton";
 
 import TrackContext from "../utils/TrackContext";
+import { getTrackDetails } from "../utils/TrackUtils";
 
 import { storage } from "../firebase/Firebase";
 import { ref, uploadBytes, deleteObject, list } from "firebase/storage";
 
 export default function Playlist() {
-    const [tracks, setTracks] = useState([]);
+    const context = useContext(TrackContext);
+    const { tracks, updateTracks, updateCurrentTrackIndex, updateCurrentTrackUrl, updateCurrentTrackName } = context;
 
     const Divider = styled('hr')(({ theme }) => ({
         color: theme.palette.primary.main,
@@ -61,7 +63,14 @@ export default function Playlist() {
     }
 
     function listTracks() {
-        list(ref(storage)).then(response => setTracks(response.items));
+        list(ref(storage)).then(response => updateTracks(response.items));
+    }
+
+    function updateCurrentTrack(index) {
+        const trackDetails = getTrackDetails(tracks.at(index));
+        updateCurrentTrackIndex(index);
+        updateCurrentTrackName(trackDetails.getTrackName());
+        updateCurrentTrackUrl(trackDetails.getTrackUrl());
     }
 
     const renderTracks = () => {
@@ -69,7 +78,9 @@ export default function Playlist() {
             return (
                 <Box>
                     <ListItem key={index} disablePadding>
-                        <ListItemButton>
+                        <ListItemButton 
+                            onDoubleClick={() => updateCurrentTrack(index)}
+                        >
                             <ListItemText primary={`${index + 1}. ${track._location.path}`}/>
                         </ListItemButton>
                         <CustomWidthTooltip
@@ -80,7 +91,7 @@ export default function Playlist() {
                                 const trackName = track._location.path;
                                 removeTrackByName(trackName)
                                 .then(() => {
-                                    setTracks(tracks.filter(data => data._location.path !== trackName));
+                                    updateTracks(tracks.filter(data => data._location.path !== trackName));
                                     console.log("Track removed successfully!")
                                 });
                             }}>
@@ -102,38 +113,32 @@ export default function Playlist() {
                     {renderTracks()}
                 </List>
             </StyledPaper>
-            <TrackContext.Consumer>
-                {({ updateCurrentTrackUrl }) => (
-                    <Dropzone onDrop={acceptedFiles => {
-                        const result = uploadTracks(acceptedFiles);
-                        result.then((response) => {
-                            listTracks();
-                            console.log("From response", response);
-                            console.log("Tracks from response: ", tracks);
-                            updateCurrentTrackUrl(`https://${response.ref._service._host}/v0/b/${response.ref._location.bucket}/o/${response.ref._location.path}?alt=media`);
-                        })
-                    }}>
-                        {({getRootProps, getInputProps}) => (
-                            <section>
-                                <div {...getRootProps()}>
-                                    <input {...getInputProps()} />
-                                    <CustomWidthTooltip
-                                        title="Drag 'n' drop some files here, or click to select files"
-                                        placement="bottom-end"
-                                    >
-                                        <Button 
-                                            startIcon={<PlaylistAdd/>}
-                                            sx={{ width: "100%" }}
-                                        >
-                                            Add Track
-                                        </Button>
-                                    </CustomWidthTooltip>
-                                </div>
-                            </section>
-                        )}
-                    </Dropzone>
-                )}                
-            </TrackContext.Consumer>
+            <Dropzone onDrop={acceptedFiles => {
+                const result = uploadTracks(acceptedFiles);
+                result.then(() => {
+                    // TODO: Refactor that
+                    listTracks();
+                })
+            }}>
+                {({getRootProps, getInputProps}) => (
+                    <section>
+                        <div {...getRootProps()}>
+                            <input {...getInputProps()} />
+                            <CustomWidthTooltip
+                                title="Drag 'n' drop some files here, or click to select files"
+                                placement="bottom-end"
+                            >
+                                <Button 
+                                    startIcon={<PlaylistAdd/>}
+                                    sx={{ width: "100%" }}
+                                >
+                                    Add Track
+                                </Button>
+                            </CustomWidthTooltip>
+                        </div>
+                    </section>
+                )}
+            </Dropzone>
         </div>
     );
 }
